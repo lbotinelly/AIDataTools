@@ -1,5 +1,7 @@
 version: '3.4'
 name: 'aidatatools'
+x-environment: &default-environment
+  COMPOSE_PROJECT_NAME: aidatatools
 
 networks:
   shared:
@@ -7,9 +9,12 @@ networks:
 services:
   aidatatools.api:
     image: ${DOCKER_REGISTRY-}aidatatoolsapi
+    container_name: aidatatools-api
+    environment:
+      <<: *default-environment
     build:
       context: .
-      dockerfile: AIDataTools.API/Dockerfile
+      dockerfile: ./AIDataTools.API/Dockerfile
     networks:
       - shared
     ports:
@@ -20,9 +25,16 @@ services:
     ports:
       - "11434:11434"
     volumes:
-      - ollama-models:/root/.ollama
+      - ./ollama-models:/root/.ollama
     environment:
       OLLAMA_MODELS: codellama
+      OLLAMA_LLM: rocm
+      OLLAMA_LLM_N_CTX: 16384
+      ROCR_VISIBLE_DEVICES: 0
+    privileged: true
+    devices:
+      - /dev/kfd:/dev/kfd
+      - /dev/dri:/dev/dri
     networks:
       - shared
 

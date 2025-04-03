@@ -18,4 +18,16 @@ public interface ILlmService
     /// </summary>
     /// <returns>True if the service is available, false otherwise</returns>
     bool IsAvailable();
+
+    /// <summary>
+    /// Processes freeform text using the LLM service.
+    /// </summary>
+    /// <param name="text">The freeform text to process.</param>
+    /// <returns>The processed result.</returns>
+    Task<string> ProcessFreeformText(string text);
+
+    /// <summary>
+    /// Downloads the LLM model.
+    /// </summary>
+    Task DownloadModel();
 }

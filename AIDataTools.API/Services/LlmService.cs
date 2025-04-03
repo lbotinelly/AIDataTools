@@ -103,4 +103,51 @@ public class LlmService : ILlmService
             return false;
         }
     }
+
+    /// <inheritdoc />
+    public async Task<string> ProcessFreeformText(string text)
+    {
+        var prompt = "Process the following freeform text: " + text;
+        return await ProcessAsync("Freeform Text Processing", prompt);
+    }
+
+    /// <inheritdoc />
+    public async Task DownloadModel()
+    {
+        var model = _configuration["llm:model"] ?? "codellama";
+        var endpoint = _configuration["llm:endpoint"] ?? "http://ollama:11434/api/generate";
+        var baseUrl = new Uri(endpoint).GetLeftPart(UriPartial.Authority);
+        var pullEndpoint = $"{baseUrl}/api/pull";
+
+        _logger.LogInformation("Downloading LLM model: {Model}", model);
+
+        var request = new
+        {
+            name = model,
+            stream = false
+        };
+
+        try
+        {
+            _logger.LogInformation("Sending pull request to LLM, model: {Model}, endpoint: {Endpoint}", model, pullEndpoint);
+            _logger.LogDebug("LLM pull request: {Request}", request);
+
+            var response = await _httpClient.PostAsJsonAsync(pullEndpoint, request);
+
+            if (!response.IsSuccessStatusCode)
+            {
+                var error = await response.Content.ReadAsStringAsync();
+                _logger.LogError("LLM pull request failed: {StatusCode}, {Error}, request: {Request}",
+                    response.StatusCode, error, request);
+                throw new Exception($"LLM pull request failed: {response.StatusCode}");
+            }
+
+            _logger.LogInformation("Model download completed successfully.");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error downloading model");
+            throw;
+        }
+    }
 }

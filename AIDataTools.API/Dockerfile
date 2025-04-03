@@ -10,16 +10,16 @@ EXPOSE 80
 FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
 ARG BUILD_CONFIGURATION=Release
 WORKDIR /src
-COPY ["AIDataTools/AIDataTools.API.csproj", "AIDataTools.API/"]
-RUN dotnet restore "./AIDataTools/AIDataTools.API.csproj"
+COPY ["AIDataTools.API/AIDataTools.API.csproj", "AIDataTools.API/"]
+RUN dotnet restore "./AIDataTools.API/AIDataTools.API.csproj"
 COPY . .
 WORKDIR "/src/AIDataTools"
-RUN dotnet build "./AIDataTools.API.csproj" -c $BUILD_CONFIGURATION -o /app/build
+RUN dotnet build "../AIDataTools.API/AIDataTools.API.csproj" -c $BUILD_CONFIGURATION -o /app/build
 
 # This stage is used to publish the service project to be copied to the final stage
 FROM build AS publish
 ARG BUILD_CONFIGURATION=Release
-RUN dotnet publish "./AIDataTools.API.csproj" -c $BUILD_CONFIGURATION -o /app/publish /p:UseAppHost=false
+RUN dotnet publish "../AIDataTools.API/AIDataTools.API.csproj" -c $BUILD_CONFIGURATION -o /app/publish /p:UseAppHost=false
 
 # This stage is used in production or when running from VS in regular mode (Default when not using the Debug configuration)
 FROM base AS final

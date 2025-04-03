@@ -5,91 +5,99 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AIDataTools</title>
     <link rel="stylesheet" href="styles.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.8.2/angular.min.js"></script>
 </head>
-<body>
+<body ng-app="aidataToolsApp">
     <header>
         <h1>AIDataTools</h1>
         <p>Data payload processing tools for developers</p>
     </header>
-    
-    <main>
+
+    <main ng-controller="DataController">
         <section class="tool-selector">
             <h2>Select Tool</h2>
             <div class="tools">
-                <button class="tool-btn active" data-tool="anonymize">Anonymize</button>
-                <button class="tool-btn" data-tool="samples">Create Samples</button>
-                <button class="tool-btn" data-tool="schema">Generate Schema</button>
-                <button class="tool-btn" data-tool="convert">Convert Format</button>
+                <button class="tool-btn" ng-class="{active: selectedTool === 'anonymize'}" ng-click="selectTool('anonymize')">Anonymize</button>
+                <button class="tool-btn" ng-class="{active: selectedTool === 'samples'}" ng-click="selectTool('samples')">Create Samples</button>
+                <button class="tool-btn" ng-class="{active: selectedTool === 'schema'}" ng-click="selectTool('schema')">Generate Schema</button>
+                <button class="tool-btn" ng-class="{active: selectedTool === 'convert'}" ng-click="selectTool('convert')">Convert Format</button>
+                <button class="tool-btn" ng-class="{active: selectedTool === 'freeform'}" ng-click="selectTool('freeform')">Freeform</button>
             </div>
         </section>
-        
+
         <section class="input-section">
             <h2>Input Payload</h2>
             <div class="format-selector">
                 <label>
-                    <input type="radio" name="format" value="json" checked> JSON
+                    <input type="radio" name="format" value="json" ng-model="selectedFormat"> JSON
                 </label>
                 <label>
-                    <input type="radio" name="format" value="xml"> XML
+                    <input type="radio" name="format" value="xml" ng-model="selectedFormat"> XML
                 </label>
                 <label>
-                    <input type="radio" name="format" value="yaml"> YAML
+                    <input type="radio" name="format" value="yaml" ng-model="selectedFormat"> YAML
                 </label>
             </div>
-            
+
             <div class="examples">
-                <button class="example-btn" data-format="json">Load JSON Example</button>
-                <button class="example-btn" data-format="xml">Load XML Example</button>
-                <button class="example-btn" data-format="yaml">Load YAML Example</button>
+                <button class="example-btn" ng-click="loadExample('json')">Load JSON Example</button>
+                <button class="example-btn" ng-click="loadExample('xml')">Load XML Example</button>
+                <button class="example-btn" ng-click="loadExample('yaml')">Load YAML Example</button>
             </div>
-            
-            <!-- Basic form that works without JS -->
-            <form action="/api/v1/data/anonymize" method="post" id="payload-form">
-                <textarea name="payload" id="payload-input" required 
+
+            <form ng-submit="processPayload()" id="payload-form">
+                <textarea ng-model="payload" id="payload-input" required
                     placeholder="Paste your data payload here..."></textarea>
-                
-                <div class="tool-options" id="samples-options" style="display: none;">
+
+                <div class="tool-options" id="samples-options" ng-show="selectedTool === 'samples'">
                     <label for="samples-count">Number of samples:</label>
-                    <input type="number" id="samples-count" name="count" value="3" min="1" max="10">
-                    
+                    <input type="number" id="samples-count" ng-model="samplesCount" value="3" min="1" max="10">
+
                     <label for="samples-criteria">Criteria:</label>
-                    <input type="text" id="samples-criteria" name="criteria" 
+                    <input type="text" id="samples-criteria" ng-model="samplesCriteria"
                         placeholder="E.g., Create international versions, with a focus on Asian personas">
                 </div>
-                
-                <div class="tool-options" id="convert-options" style="display: none;">
+
+                <div class="tool-options" id="convert-options" ng-show="selectedTool === 'convert'">
                     <label for="target-format">Target Format:</label>
-                    <select id="target-format" name="targetFormat">
+                    <select id="target-format" ng-model="targetFormat">
                         <option value="json">JSON</option>
                         <option value="xml">XML</option>
                         <option value="yaml">YAML</option>
                     </select>
                 </div>
-                
+
+                <div class="tool-options" id="freeform-options" ng-show="selectedTool === 'freeform'">
+                    <label for="freeformText">Enter Freeform Text:</label>
+                    <textarea id="freeformText" ng-model="freeformText" rows="4" cols="50"></textarea>
+                </div>
+
                 <button type="submit" id="process-btn">Process</button>
             </form>
         </section>
-        
-        <section class="result-section" id="result-section" style="display: none;">
+
+        <section class="result-section" id="result-section" ng-show="result">
             <h2>Result</h2>
             <div class="result-actions">
-                <button id="copy-btn">Copy to Clipboard</button>
-                <button id="download-btn">Download</button>
+                <button id="copy-btn" ng-click="copyResult()">Copy to Clipboard</button>
+                <button id="download-btn" ng-click="downloadResult()">Download</button>
             </div>
-            <pre id="result-output"></pre>
+            <pre id="result-output">{{result}}</pre>
         </section>
-        
-        <div class="loading" id="loading" style="display: none;">
+
+        <div class="loading" id="loading" ng-show="loading">
             <div class="spinner"></div>
             <p>Processing your request...</p>
         </div>
     </main>
-    
+
     <footer>
         <p>AIDataTools - Open Source Data Processing Tools</p>
         <p><a href="https://github.com/yourusername/AIDataTools" target="_blank">GitHub</a></p>
     </footer>
-    
+
+    <button id="downloadModelBtn" ng-click="downloadModel()">Download Model</button>
+
     <script src="script.js"></script>
 </body>
 </html>

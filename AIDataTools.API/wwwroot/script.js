@@ -1,21 +1,17 @@
-document.addEventListener('DOMContentLoaded', function() {
-    // Elements
-    const toolButtons = document.querySelectorAll('.tool-btn');
-    const payloadForm = document.getElementById('payload-form');
-    const payloadInput = document.getElementById('payload-input');
-    const samplesOptions = document.getElementById('samples-options');
-    const convertOptions = document.getElementById('convert-options');
-    const resultSection = document.getElementById('result-section');
-    const resultOutput = document.getElementById('result-output');
-    const copyBtn = document.getElementById('copy-btn');
-    const downloadBtn = document.getElementById('download-btn');
-    const loadingIndicator = document.getElementById('loading');
-    const exampleButtons = document.querySelectorAll('.example-btn');
-    
-    // API endpoint base URL
+angular.module('aidataToolsApp', [])
+.controller('DataController', ['$scope', '$http', function($scope, $http) {
+    $scope.selectedTool = 'anonymize';
+    $scope.selectedFormat = 'json';
+    $scope.payload = '';
+    $scope.samplesCount = 3;
+    $scope.samplesCriteria = '';
+    $scope.targetFormat = 'json';
+    $scope.result = '';
+    $scope.loading = false;
+    $scope.freeformText = '';
+
     const apiBaseUrl = '/api/v1/data';
-    
-    // Example payloads
+
     const examples = {
         json: `{
   "users": [
@@ -122,118 +118,90 @@ document.addEventListener('DOMContentLoaded', function() {
     isActive: true
     registeredAt: '2023-03-20T14:45:00Z'`
     };
-    
-    // Tool selection
-    toolButtons.forEach(button => {
-        button.addEventListener('click', function() {
-            // Update active button
-            toolButtons.forEach(btn => btn.classList.remove('active'));
-            this.classList.add('active');
-            
-            // Update form action
-            const tool = this.dataset.tool;
-            payloadForm.action = `${apiBaseUrl}/${tool}`;
-            
-            // Show/hide tool-specific options
-            samplesOptions.style.display = tool === 'samples' ? 'block' : 'none';
-            convertOptions.style.display = tool === 'convert' ? 'block' : 'none';
-        });
-    });
-    
-    // Load example payloads
-    exampleButtons.forEach(button => {
-        button.addEventListener('click', function() {
-            const format = this.dataset.format;
-            payloadInput.value = examples[format] || '';
-            
-            // Select the corresponding format radio button
-            document.querySelector(`input[name="format"][value="${format}"]`).checked = true;
-        });
-    });
-    
-    // Form submission
-    payloadForm.addEventListener('submit', async function(e) {
-        e.preventDefault();
-        
-        // Get active tool
-        const activeTool = document.querySelector('.tool-btn.active').dataset.tool;
-        
-        // Prepare request data
+
+    $scope.selectTool = function(tool) {
+        $scope.selectedTool = tool;
+    };
+
+    $scope.loadExample = function(format) {
+        $scope.payload = examples[format] || '';
+        $scope.selectedFormat = format;
+    };
+
+    $scope.processPayload = function() {
+        $scope.loading = true;
+        $scope.result = '';
+
         let requestData = {
-            payload: payloadInput.value
+            payload: $scope.payload
         };
-        
-        // Add tool-specific data
-        if (activeTool === 'samples') {
-            requestData.count = document.getElementById('samples-count').value;
-            requestData.criteria = document.getElementById('samples-criteria').value;
-        } else if (activeTool === 'convert') {
-            requestData.targetFormat = document.getElementById('target-format').value;
+
+        if ($scope.selectedTool === 'samples') {
+            requestData.count = $scope.samplesCount;
+            requestData.criteria = $scope.samplesCriteria;
+        } else if ($scope.selectedTool === 'convert') {
+            requestData.targetFormat = $scope.targetFormat;
+        } else if ($scope.selectedTool === 'freeform') {
+            requestData.text = $scope.freeformText;
         }
-        
-        // Show loading indicator
-        loadingIndicator.style.display = 'flex';
-        
-        try {
-            console.log(`Sending request to ${apiBaseUrl}/${activeTool} with data:`, requestData);
-            // Send request
-            const response = await fetch(`${apiBaseUrl}/${activeTool}`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(requestData)
-            });
-            
-            if (!response.ok) {
-                console.error(`Request failed with status: ${response.status} ${response.statusText}`);
-                throw new Error(`Error: ${response.status} ${response.statusText}`);
-            }
-            
-            const data = await response.json();
-            
-            // Display result
-            resultOutput.textContent = data.result;
-            resultSection.style.display = 'block';
-            
-            // Scroll to result
-            resultSection.scrollIntoView({ behavior: 'smooth' });
-        } catch (error) {
-            alert(`An error occurred: ${error.message}`);
+
+        let endpoint = `${apiBaseUrl}/${$scope.selectedTool}`;
+
+        $http({
+            method: 'POST',
+            url: endpoint,
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            data: requestData
+        }).then(function(response) {
+            $scope.result = response.data.result;
+        }).catch(function(error) {
             console.error('Error:', error);
-        } finally {
-            // Hide loading indicator
-            loadingIndicator.style.display = 'none';
-        }
-    });
-    
-    // Copy result to clipboard
-    copyBtn.addEventListener('click', function() {
-        navigator.clipboard.writeText(resultOutput.textContent)
-            .then(() => {
-                const originalText = this.textContent;
-                this.textContent = 'Copied!';
-                setTimeout(() => {
-                    this.textContent = originalText;
-                }, 2000);
+            $scope.result = 'Error processing request.';
+        }).finally(function() {
+            $scope.loading = false;
+        });
+    };
+
+    $scope.copyResult = function() {
+        navigator.clipboard.writeText($scope.result)
+            .then(function() {
+                alert('Result copied to clipboard!');
             })
-            .catch(err => {
-                console.error('Failed to copy text: ', err);
-                alert('Failed to copy text to clipboard');
+            .catch(function(err) {
+                console.error('Could not copy text: ', err);
+                alert('Could not copy text to clipboard');
             });
-    });
-    
-    // Download result
-    downloadBtn.addEventListener('click', function() {
-        const activeTool = document.querySelector('.tool-btn.active').dataset.tool;
-        const blob = new Blob([resultOutput.textContent], { type: 'text/plain' });
+    };
+
+    $scope.downloadResult = function() {
+        const blob = new Blob([$scope.result], { type: 'text/plain' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `dataforge_${activeTool}_result.txt`;
+        a.download = `dataforge_${$scope.selectedTool}_result.txt`;
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
-    });
-});
+    };
+
+    $scope.isModelAvailable = false; // Initially assume the model is available
+
+    $scope.downloadModel = function() {
+        $scope.loading = true;
+        $http({
+            method: 'GET',
+            url: `${apiBaseUrl}/downloadModel`
+        }).then(function(response) {
+            $scope.isModelAvailable = true;
+            alert('Model downloaded successfully!');
+        }).catch(function(error) {
+            console.error('Error:', error);
+            alert('Error downloading model.');
+        }).finally(function() {
+            $scope.loading = false;
+        });
+    };
+}]);
