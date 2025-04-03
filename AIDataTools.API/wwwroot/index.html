@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AIDataTools</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header>
+        <h1>AIDataTools</h1>
+        <p>Data payload processing tools for developers</p>
+    </header>
+    
+    <main>
+        <section class="tool-selector">
+            <h2>Select Tool</h2>
+            <div class="tools">
+                <button class="tool-btn active" data-tool="anonymize">Anonymize</button>
+                <button class="tool-btn" data-tool="samples">Create Samples</button>
+                <button class="tool-btn" data-tool="schema">Generate Schema</button>
+                <button class="tool-btn" data-tool="convert">Convert Format</button>
+            </div>
+        </section>
+        
+        <section class="input-section">
+            <h2>Input Payload</h2>
+            <div class="format-selector">
+                <label>
+                    <input type="radio" name="format" value="json" checked> JSON
+                </label>
+                <label>
+                    <input type="radio" name="format" value="xml"> XML
+                </label>
+                <label>
+                    <input type="radio" name="format" value="yaml"> YAML
+                </label>
+            </div>
+            
+            <div class="examples">
+                <button class="example-btn" data-format="json">Load JSON Example</button>
+                <button class="example-btn" data-format="xml">Load XML Example</button>
+                <button class="example-btn" data-format="yaml">Load YAML Example</button>
+            </div>
+            
+            <!-- Basic form that works without JS -->
+            <form action="/api/v1/data/anonymize" method="post" id="payload-form">
+                <textarea name="payload" id="payload-input" required 
+                    placeholder="Paste your data payload here..."></textarea>
+                
+                <div class="tool-options" id="samples-options" style="display: none;">
+                    <label for="samples-count">Number of samples:</label>
+                    <input type="number" id="samples-count" name="count" value="3" min="1" max="10">
+                    
+                    <label for="samples-criteria">Criteria:</label>
+                    <input type="text" id="samples-criteria" name="criteria" 
+                        placeholder="E.g., Create international versions, with a focus on Asian personas">
+                </div>
+                
+                <div class="tool-options" id="convert-options" style="display: none;">
+                    <label for="target-format">Target Format:</label>
+                    <select id="target-format" name="targetFormat">
+                        <option value="json">JSON</option>
+                        <option value="xml">XML</option>
+                        <option value="yaml">YAML</option>
+                    </select>
+                </div>
+                
+                <button type="submit" id="process-btn">Process</button>
+            </form>
+        </section>
+        
+        <section class="result-section" id="result-section" style="display: none;">
+            <h2>Result</h2>
+            <div class="result-actions">
+                <button id="copy-btn">Copy to Clipboard</button>
+                <button id="download-btn">Download</button>
+            </div>
+            <pre id="result-output"></pre>
+        </section>
+        
+        <div class="loading" id="loading" style="display: none;">
+            <div class="spinner"></div>
+            <p>Processing your request...</p>
+        </div>
+    </main>
+    
+    <footer>
+        <p>AIDataTools - Open Source Data Processing Tools</p>
+        <p><a href="https://github.com/yourusername/AIDataTools" target="_blank">GitHub</a></p>
+    </footer>
+    
+    <script src="script.js"></script>
+</body>
+</html>

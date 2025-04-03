@@ -1,0 +1,30 @@
+version: '3.4'
+name: 'aidatatools'
+
+networks:
+  shared:
+
+services:
+  aidatatools.api:
+    image: ${DOCKER_REGISTRY-}aidatatoolsapi
+    build:
+      context: .
+      dockerfile: AIDataTools.API/Dockerfile
+    networks:
+      - shared
+    ports:
+      - "5000:8080"
+
+  ollama:
+    image: ollama/ollama:latest
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama-models:/root/.ollama
+    environment:
+      OLLAMA_MODELS: codellama
+    networks:
+      - shared
+
+volumes:
+  ollama-models:
