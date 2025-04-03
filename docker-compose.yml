@@ -1,42 +1,48 @@
-version: '3.4'
-name: 'aidatatools'
-x-environment: &default-environment
-  COMPOSE_PROJECT_NAME: aidatatools
+# Use a more recent version if features are needed, otherwise 3.4 is fine. Consider 3.8 or later.
+version: '3.8'
+name: 'aidatatools' # Sets the project name prefix for containers, networks, volumes
 
 networks:
   shared:
+    driver: bridge # Explicitly define driver (bridge is default but good practice)
 
 services:
-  aidatatools.api:
+  api:
     image: ${DOCKER_REGISTRY-}aidatatoolsapi
-    container_name: aidatatools-api
-    environment:
-      <<: *default-environment
+    container_name: aidatatools-api # Explicit name is good
     build:
       context: .
       dockerfile: ./AIDataTools.API/Dockerfile
     networks:
       - shared
     ports:
+      # Expose API on host port 5000, mapping to container's port 8080
       - "5000:8080"
+    environment:
+      OLLAMA_API_URL: http://ollama:11434
+    depends_on:
+      # Wait for ollama container to START (doesn't guarantee readiness without healthcheck)
+      ollama:
+        condition: service_started # Or use service_healthy if adding healthcheck to ollama
+    restart: unless-stopped # Optional: Policy for restarting the container
 
   ollama:
     image: ollama/ollama:latest
+    container_name: aidatatools-ollama
     ports:
       - "11434:11434"
     volumes:
-      - ./ollama-models:/root/.ollama
-    environment:
-      OLLAMA_MODELS: codellama
-      OLLAMA_LLM: rocm
-      OLLAMA_LLM_N_CTX: 16384
-      ROCR_VISIBLE_DEVICES: 0
-    privileged: true
-    devices:
-      - /dev/kfd:/dev/kfd
-      - /dev/dri:/dev/dri
+      # Use the host bind mount
+      - ./ollama_data:/root/.ollama
     networks:
       - shared
-
-volumes:
-  ollama-models:
+    environment:
+      OLLAMA_HOST: '0.0.0.0'
+    restart: unless-stopped # Optional: Restart policy
+    # Basic healthcheck for Ollama
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "http://localhost:11434/api/tags"] # Simple check
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s # Give Ollama time to initialize

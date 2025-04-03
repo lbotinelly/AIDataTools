@@ -1,4 +1,5 @@
 @echo off
+docker-compose down
 docker-compose build
-docker-compose run --rm ollama scripts/pull-model.bat
+docker-compose run --rm ollama pull-model.bat
 pause
